@@ -1,0 +1,6 @@
+%form{ :action => request.path, :method => :post }
+  %h1= "Rescaling #{params[:ns]}.#{params[:name]}"
+  %label{ :for => :scale } Scale
+  %input#scale{ :type => :number, :value => @scale, :name => :scale }
+  %input.btn.btn-success{ :type => :submit, :value => "Update" }
+  %a.btn.btn-warning{ :href => "/#{request.path.split(/\//)[1]}" } Cancel

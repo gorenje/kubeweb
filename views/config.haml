@@ -1,0 +1,7 @@
+- if ENV['KUBECONFIG']
+  %h1= Kubectl.version rescue nil
+%form{ :action => "/_cfg", :method => :post }
+  %label{ :for => :kubeconfig } KubeConfig
+  %input{ :id => :kubeconfig, :type => :text, :value => Kubectl.kbcfg, :size => 80, :name => :kubeconfig }
+  %input.btn.btn-success{ :type => :submit, :value => "Update" }
+  %a.btn.btn-warning{ :href => "/" } Cancel

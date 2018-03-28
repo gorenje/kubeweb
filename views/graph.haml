@@ -1,0 +1,125 @@
+.container-fluid
+  .row
+    .col-12
+      #cpugraph
+  .row
+    .col-12
+      #memgraph
+
+:javascript
+  var perc = "#{@units}" === "percent";
+
+  function handleClkSeries(chartid,elem,event) {
+    var sername = elem.name;
+    if ( event.metaKey) {
+      $.get("/#{@cmp}/#{@ns}/"+elem.name+"/log").fail(NotApp);
+    } else if ( event.altKey ) {
+      $.get("/#{@cmp}/#{@ns}/"+elem.name+"/shell").fail(NotApp);
+    } else {
+      hideSeries(chartid, elem.name);
+    }
+  }
+
+  function updateChart(chart, type) {
+    $.get("/_graph.json?t=" + type +
+          "&c=#{@cmp}&ns=#{@ns}&u=#{@units}&d=#{@limits}")
+      .done(function(data){
+        var ts = (new Date()).getTime();
+        $.each(data.data, function(idx, dp) {
+          var dp_def = false;
+          $.each(chart.series, function(idx, series) {
+            if ( series.name === dp.name ) {
+              series.addPoint([ts,dp.value], true)
+              dp_def = true;
+            }
+          })
+          if ( !dp_def ) {
+            chart.addSeries({name: dp.name, data: [ [ts,dp.value] ]})
+          }
+        })
+        setTimeout(function(){updateChart(chart,type)},5000);
+    })
+    .fail(function(){
+      setTimeout(function(){updateChart(chart,type)},5000);
+    })
+  }
+
+  $(document).ready(function(){
+    var optionsCpu = {
+      chart: {
+        renderTo: 'cpugraph', plotBackgroundColor: null,
+        plotBorderWidth: null, plotShadow: false
+      },
+      yAxis: {
+        title: {
+          text: (perc ? "Percent of limit" : 'CPU usage in millicpu')
+        }
+      },
+      xAxis: {
+        type: 'datetime',
+        title: { text: 'Time' }
+      },
+      legend: {
+          align: 'right',
+          verticalAlign: 'middle',
+          layout: 'vertical'
+      },
+      title: {
+        text: 'CPU Resources <a href="#" onclick="return toggleLegend(\'cpugraph\')">Toggle Visible</a>',
+        useHTML: true
+      },
+      tooltip: {
+        pointFormat: '{series.name}: <b>{point.y}</b><br>Click: Hide, Alt+Click: Open Shell, Meta+Click: Open Log'
+      },
+      plotOptions: {
+        series: {
+          cursor: 'pointer',
+          events: {
+            click: function (event) { handleClkSeries('cpugraph',this,event) }
+          }
+        }
+      }
+    }
+
+    var optionsMem = {
+      chart: {
+        renderTo: 'memgraph', plotBackgroundColor: null,
+        plotBorderWidth: null, plotShadow: false
+      },
+      yAxis: {
+        title: {
+          text: (perc ? "Percent of Limit" : 'Memory in MegaBytes'),
+        }
+      },
+      xAxis: {
+        type: 'datetime',
+        title: { text: 'Time' }
+      },
+      legend: {
+          align: 'right',
+          verticalAlign: 'middle',
+          layout: 'vertical'
+      },
+      title: {
+        text: 'Memory Resources <a href="#" onclick="return toggleLegend(\'memgraph\')">Toggle Visible</a>',
+        useHTML: true
+      },
+      tooltip: {
+        pointFormat: '{series.name}: <b>{point.y}</b><br>Click: Hide, Alt+Click: Open Shell, Meta+Click: Open Log',
+      },
+      plotOptions: {
+        series: {
+          cursor: 'pointer',
+          events: {
+            click: function (event) { handleClkSeries('memgraph',this,event) }
+          }
+        }
+      }
+    }
+
+    window.chartcpu = Highcharts.chart(optionsCpu);
+    window.chartmem = Highcharts.chart(optionsMem);
+
+    updateMemChart()
+    updateCpuChart()
+  })
