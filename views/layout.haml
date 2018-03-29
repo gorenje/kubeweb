@@ -6,7 +6,6 @@
     %script{:src => "https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"}
     %script{:src => "https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"}
     %script{:src => "https://cdn.datatables.net/v/bs4/dt-1.10.16/datatables.min.js"}
-    %script{:src => "https://cdn.datatables.net/v/bs4/dt-1.10.16/datatables.min.js"}
     %script{:src => "https://cdnjs.cloudflare.com/ajax/libs/highcharts/6.0.7/highcharts.js"}
     %script{:src => "/js/app.js"}
     %title= @title || 'KubeWeb'
@@ -17,7 +16,7 @@
       }
     :javascript
       $(document).ready(function() {
-        $('a._log, a._shell, a._busybox, a._desc').click(function(event){
+        $('a._log, a._shell, a._desc').click(function(event){
           $.get($(event.target).attr('href')).fail(NotApp);
           return false;
         });
@@ -44,10 +43,6 @@
         = "|"
         %a{ :href => "/_graph" } Graphs
         = "|"
-        %a{ :href => "/_ip" } Ip
-        = "|"
-        %a._busybox{ :href => "/_busybox" } Busybox
-        = "|"
-        %a{ :href => "/_busybox" } BusyboxNS
+        %a{ :href => "/_busybox" } Busybox
     .row.pt-2
-      .col-12.text-center= yield
+      .col-12= yield

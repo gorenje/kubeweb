@@ -116,11 +116,6 @@ module Routes
         @choices = Kubectl.namespaces
         haml :choice
       end
-
-      app.get '/_ip' do
-        @title = "External Ip"
-        haml Kubectl.external_ip
-      end
     end
   end
 end
