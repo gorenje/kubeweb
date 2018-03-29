@@ -1,8 +1,10 @@
 :javascript
-  $(document).ready(function(){$('#datatable').DataTable({"pageLength": 100});})
+  $(document).ready(function(){
+    $('#datatable').DataTable({"pageLength": 100});
+  })
 
-%table#datatable.table.table-striped.table-hover
-  %thead.thead-dark
+%table#datatable.table.table-striped.table-hover.table-condensed.table-responsive
+  %thead
     %tr= header_row(@allrows.first)
   %tbody
     - @allrows[1..-1].each_with_index do |row,idx|
