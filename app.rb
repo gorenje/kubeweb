@@ -51,7 +51,7 @@ class Webapp < Sinatra::Base
     Kubectl.watch(params[:ns], params[:name]) ; redirect('/pods')
   end
 
-  get '/top/nodes/:name/:ignore/desc' do
+  get '(/top)?/nodes/:name/:ignore/desc' do
     Kubectl.describe(nil, "nodes", params[:name])
     redirect('/top/nodes')
   end
@@ -89,10 +89,10 @@ class Webapp < Sinatra::Base
   include Routes::Graph
 
   get '/' do
-    haml "%a{:href => '/_cfg'} Config"
+    haml ".text-center\n  %a{:href => '/_cfg'} Config"
   end
 
   error(404) do
-    haml "Action/Page not supported."
+    haml ".text-center\n  Action/Page not supported."
   end
 end

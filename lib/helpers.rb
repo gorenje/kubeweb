@@ -6,11 +6,11 @@ module ViewHelpers
   end
 
   def header_row(line)
-    (line + " Actions").split(SpcRE).map { |v| "<th>#{v}</th>" }.join("\n")
+    (line + " Actions").split(SpcRE).map { |v| "<th>#{v.capitalize}</th>" }.join("\n")
   end
 
   def cell(value)
-    o = value =~ /^([0-9]+)(m|Mi|Gi|%|d|h)/ ? Nrm.call($1,$2) : value
+    o = value =~ /^([0-9]+)(m|Mi|Gi|%|d|h|Ki)/ ? Nrm.call($1,$2) : value
     "<td data-order='#{o}'>#{value}</td>"
   end
 

@@ -29,20 +29,63 @@ module Kubectl
                            " --containers=true") : ""))
   end
 
+  # Return an array of output lines, similar to what 'kubectl get' returns
+  # but each line because an array entry. This implies the first line is
+  # the header line and the rest are entries. The header line is split by
+  # spaces, which then determines the number of columns in the result table.
+  # See views/table.haml for details.
+  #
+  # Because some components have extra spaces in their header lines, we
+  # retrieve these using JSON and convert to a more generic representation.
   def get(cmp)
     case cmp
+    when 'nodes'
+      hsh = JSON(kctl("get #{cmp.to_s} --all-namespaces --output=json").join)
+      header = "NAME STATUS CPU MEMORY KUBELET&nbsp;VERSION " +
+               "KERNEL&nbsp;VERSION CONTAINER&nbsp;VERSION ADDRESS AGE"
+      [header] +
+        (hsh["items"].map do |item|
+           md,sp,st,age = _splat(item)
+           status = st["conditions"].select { |a| a["status"] == "True" }.
+                      map { |a| a["type"] }.join(",")
+           ni = st["nodeInfo"]
+
+           [md["name"],
+            status,
+            st["capacity"]["cpu"],
+            st["capacity"]["memory"],
+            ni["kubeletVersion"],
+            ni["kernelVersion"],
+            ni["containerRuntimeVersion"],
+            st["addresses"].map { |a| a["address"] }.join(","),
+            age,
+           ].map{ |v| v || "&nbsp;" }.join(" ")
+         end)
+
+    when 'ingress'
+      hsh = JSON(kctl("get #{cmp.to_s} --all-namespaces --output=json").join)
+      header = "NAMESPACE NAME HOSTS AGE"
+      [header] + (hsh["items"].map do |item|
+                    md,sp,st,age = _splat(item)
+                    [md["namespace"], md["name"],
+                     sp["rules"].map{|a|a["host"]}.join(",<br>"),
+                     age
+                    ].map{ |v| v || "&nbsp;" }.join(" ")
+                  end)
+
     when 'pvc'
       hsh = JSON(kctl("get #{cmp.to_s} --all-namespaces --output=json").join)
       header = "NAMESPACE NAME STATUS VOLUME CAPACITY ACCESS&nbsp;MODES "+
-               "STORAGECLASS"
+               "STORAGECLASS AGE"
       [header] + (hsh["items"].map do |item|
-                    [item["metadata"]["namespace"],
-                     item["metadata"]["name"],
-                     item["status"]["phase"],
-                     item["spec"]["volumeName"],
-                     item["status"]["capacity"]["storage"],
-                     item["status"]["accessModes"].join(","),
-                     item["spec"]["storageClassName"],
+                    md,sp,st,age = _splat(item)
+                    [md["namespace"], md["name"],
+                     st["phase"],
+                     sp["volumeName"],
+                     st["capacity"]["storage"],
+                     st["accessModes"].join(","),
+                     sp["storageClassName"],
+                     age
                     ].map{ |v| v || "&nbsp;" }.join(" ")
                   end)
     else
@@ -59,26 +102,26 @@ module Kubectl
     ["client","server"].map { |a| "#{a}: #{d[a+v]['git'+v]}" }.join(" & ")
   end
 
-  def osascript(script)
+  def open_terminal(script)
     system("osascript -e 'tell application \"Terminal\" to do script " +
            "\"kubectl #{script} --kubeconfig=\\\"#{kbcfg}\\\"\"'")
   end
 
   def busybox(ns = nil)
-    osascript("run -it busybox-#{(rand*1000000).to_i.to_s(16)} " +
-              "-n #{ns || 'default'} --image=busybox --restart=Never")
+    open_terminal("run -it busybox-#{(rand*1000000).to_i.to_s(16)} " +
+                  "-n #{ns || 'default'} --image=busybox --restart=Never")
   end
 
   def watch(ns,name)
-    osascript("logs #{_c(ns,name)} --follow=true")
+    open_terminal("logs #{_c(ns,name)} --follow=true")
   end
 
   def shell(ns,name)
-    osascript("exec #{_c(ns,name)} -it /bin/bash")
+    open_terminal("exec #{_c(ns,name)} -it /bin/bash")
   end
 
   def describe(ns,cmp,name)
-    osascript("describe #{cmp} #{_c(ns,name)}")
+    open_terminal("describe #{cmp} #{_c(ns,name)}")
   end
 
   def restart(ns,name)
@@ -120,8 +163,15 @@ module Kubectl
        select { |a| a =~ /LoadBalancer Ingress/ }.first||"").split(SpcRE).last
   end
 
+  # Add reference to a container if a pod has multiple containers.
   def _c(ns,name)
     name,container = name =~ /:/ ? name.split(/:/) : [name,nil]
-    "#{name} #{container ? '-c ' + container : ''} -n #{ns}"
+    "#{name} #{container ? '-c ' + container : ''} #{ns ? '-n ' + ns : ''}"
+  end
+
+  def _splat(item)
+    md,sp,st = ["metadata","spec","status"].map {|a| item[a]}
+    age_days = (DateTime.now - DateTime.parse(md["creationTimestamp"])).to_i
+    [md,sp,st, "%d&nbsp;days" % age_days]
   end
 end
