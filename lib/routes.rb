@@ -1,4 +1,90 @@
 module Routes
+  module Actions
+    module Delete
+      def self.included(app)
+        Cmpnts.each do |cmp|
+          app.get '(/top)?/' + cmp + '/:ns/:name/delete(/:r)?' do
+            if params[:r]
+              if params[:r] == "yes"
+                Kubectl.delete(cmp,params[:ns],params[:name])
+              end
+              redirect "/#{cmp}"
+            else
+              @title = "Delete #{cmp}"
+              haml :choice
+            end
+          end
+        end
+      end
+    end
+
+    module Restart
+      def self.included(app)
+        app.get '(/top)?/pods/:ns/:name/restart(/:r)?' do
+          if params[:r]
+            Kubectl.restart(params[:ns],params[:name]) if params[:r] == "yes"
+            redirect "/pods"
+          else
+            @title = "Restart Pod"
+            haml :choice
+          end
+        end
+      end
+    end
+
+    module Scale
+      def self.included(app)
+        app.post '/deployments/:ns/:name/scale' do
+          Kubectl.scale(params[:ns],params[:name],params[:scale])
+          redirect '/deployments'
+        end
+
+        app.get '/deployments/:ns/:name/scale' do
+          @title = "Scale deployment"
+          @scale = Kubectl.deployment(params[:ns],params[:name])[-1].
+                     split(SpcRE)[1]
+          haml :scale
+        end
+
+        app.get('(/top)?/pods/:ns/:name/scale') do
+          redirect '/deployments'
+        end
+      end
+    end
+
+    module Shell
+      def self.included(app)
+        app.get '(/top)?/pods/:ns/:name/shell' do
+          Kubectl.shell(params[:ns], params[:name])
+          redirect('/pods')
+        end
+      end
+    end
+
+    module Log
+      def self.included(app)
+        app.get '(/top)?/pods/:ns/:name/log' do
+          Kubectl.watch(params[:ns], params[:name])
+          redirect('/pods')
+        end
+      end
+    end
+
+    module Desc
+      def self.included(app)
+        app.get '(/top)?/nodes/:name/:ignore/desc' do
+          Kubectl.describe(nil, "nodes", params[:name])
+          redirect('/top/nodes')
+        end
+
+        app.get '(/top)?/:cmp/:ns/:name/desc' do
+          Kubectl.describe(params[:ns], params[:cmp], params[:name])
+          redirect('/'+params[:cmp])
+        end
+      end
+    end
+  end
+
   module Graph
     def self.included(app)
       app.get '/_graph(/:cmp)?(/:ns)?(/:units)?' do
