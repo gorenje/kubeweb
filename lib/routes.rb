@@ -185,6 +185,12 @@ module Routes
 
   module ClusterActions
     def self.included(app)
+      app.get '/_events' do
+        @title = "Cluster Events"
+        @allrows = Kubectl.get("events")
+        haml :table
+      end
+
       app.get '/_cfg' do
         @title = "Configuration"
         haml :config

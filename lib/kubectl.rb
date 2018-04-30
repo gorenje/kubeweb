@@ -29,8 +29,8 @@ module Kubectl
                            " --containers=true") : ""))
   end
 
-  # Return an array of output lines, similar to what 'kubectl get' returns
-  # but each line because an array entry. This implies the first line is
+  # Return an array of output lines, similar to what 'kubectl get' returns.
+  # Each line becomes an array entry. This implies the first line is
   # the header line and the rest are entries. The header line is split by
   # spaces, which then determines the number of columns in the result table.
   # See views/table.haml for details.
@@ -39,6 +39,30 @@ module Kubectl
   # retrieve these using JSON and convert to a more generic representation.
   def get(cmp)
     case cmp
+    when "events"
+      hsh = JSON(kctl("get #{cmp.to_s} --all-namespaces --output=json").join)
+      header = "NAMESPACE LAST&nbsp;SEEN FIRST&nbsp;SEEN COUNT NAME KIND "+
+               "SUBOBJECT TYPE REASON SOURCE MESSAGE"
+
+      [header] +
+        (hsh["items"].map do |item|
+           obj = item["involvedObject"]
+           src = item["source"]
+           [ obj["namespace"],
+             _minsago(item["lastTimestamp"]),
+             _minsago(item["firstTimestamp"]),
+             item["count"],
+             obj["name"],
+             obj["kind"],
+             obj["fieldPath"],
+             item["type"],
+             item["reason"],
+             "%s, %s" % [src["component"], src["host"]],
+             item["message"]
+           ].map{ |v| (v || "&nbsp;").to_s.gsub(/[[:space:]+]/, "&nbsp;") }.
+             join(" ")
+         end)
+
     when 'nodes'
       hsh = JSON(kctl("get #{cmp.to_s} --all-namespaces --output=json").join)
       header = "NAME STATUS CPU MEMORY KUBELET&nbsp;VERSION " +
@@ -173,5 +197,9 @@ module Kubectl
     md,sp,st = ["metadata","spec","status"].map {|a| item[a]}
     age_days = (DateTime.now - DateTime.parse(md["creationTimestamp"])).to_i
     [md,sp,st, "%d&nbsp;days" % age_days]
+  end
+
+  def _minsago(str)
+    "%dm" % ((DateTime.now - DateTime.parse(str)).to_f * 24 * 60).to_i
   end
 end
