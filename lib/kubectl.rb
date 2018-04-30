@@ -41,7 +41,7 @@ module Kubectl
     case cmp
     when "events"
       hsh = JSON(kctl("get #{cmp.to_s} --all-namespaces --output=json").join)
-      header = "NAMESPACE LAST&nbsp;SEEN FIRST&nbsp;SEEN COUNT NAME KIND "+
+      header = "NAMESPACE NAME LAST&nbsp;SEEN FIRST&nbsp;SEEN COUNT KIND "+
                "SUBOBJECT TYPE REASON SOURCE MESSAGE"
 
       [header] +
@@ -49,10 +49,10 @@ module Kubectl
            obj = item["involvedObject"]
            src = item["source"]
            [ obj["namespace"],
+             obj["name"],
              _minsago(item["lastTimestamp"]),
              _minsago(item["firstTimestamp"]),
              item["count"],
-             obj["name"],
              obj["kind"],
              obj["fieldPath"],
              item["type"],

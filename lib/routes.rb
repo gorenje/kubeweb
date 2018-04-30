@@ -58,6 +58,11 @@ module Routes
           Kubectl.shell(params[:ns], params[:name])
           redirect('/pods')
         end
+
+        app.get '/_events/:ns/:name/shell' do
+          Kubectl.shell(params[:ns], params[:name])
+          redirect('/_events')
+        end
       end
     end
 
@@ -67,6 +72,11 @@ module Routes
           Kubectl.watch(params[:ns], params[:name])
           redirect('/pods')
         end
+
+        app.get '/_events/:ns/:name/log' do
+          Kubectl.watch(params[:ns], params[:name])
+          redirect('/_events')
+        end
       end
     end
 
@@ -75,6 +85,10 @@ module Routes
         app.get '(/top)?/nodes/:name/:ignore/desc' do
           Kubectl.describe(nil, "nodes", params[:name])
           redirect('/top/nodes')
+        end
+
+        app.get '/_events/:ns/:name/desc' do
+          halt(404)
         end
 
         app.get '(/top)?/:cmp/:ns/:name/desc' do
