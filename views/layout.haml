@@ -16,7 +16,7 @@
       }
     :javascript
       $(document).ready(function() {
-        $('a._log, a._shell, a._desc').click(function(event){
+        $('a._log, a._shell, a._desc, a._edit').click(function(event){
           $.get($(event.target).attr('href')).fail(NotApp);
           return false;
         });

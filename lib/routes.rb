@@ -97,6 +97,22 @@ module Routes
         end
       end
     end
+
+    module Edit
+      def self.included(app)
+        app.get '(/top)?/pods/:ns/:name/edit' do
+          Kubectl.edit(params[:ns], "pods", params[:name])
+          redirect('/pods')
+        end
+
+        ["deployments", "services", "ingress", "pvc"].each do |cmp|
+          app.get "/#{cmp}/:ns/:name/edit" do
+            Kubectl.edit(params[:ns], cmp, params[:name])
+            redirect("/#{cmp}")
+          end
+        end
+      end
+    end
   end
 
   module Graph

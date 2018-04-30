@@ -144,6 +144,10 @@ module Kubectl
     open_terminal("exec #{_c(ns,name)} -it /bin/bash")
   end
 
+  def edit(ns,cmp,name)
+    open_terminal("edit #{cmp} #{_c(ns,name)}")
+  end
+
   def describe(ns,cmp,name)
     open_terminal("describe #{cmp} #{_c(ns,name)}")
   end

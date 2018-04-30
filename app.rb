@@ -18,6 +18,7 @@ class Webapp < Sinatra::Base
   include Routes::Actions::Log
   include Routes::Actions::Desc
   include Routes::Actions::Shell
+  include Routes::Actions::Edit
   include Routes::ClusterActions
   include Routes::Graph
 

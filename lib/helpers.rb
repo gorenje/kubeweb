@@ -16,7 +16,7 @@ module ViewHelpers
 
   def line_to_row(line,idx)
     (c = line.split(SpcRE)).map { |v| cell(v) }.join("\n") + "<td>" +
-      ["delete", "log", "desc", "scale", "shell", "restart"].map do |v|
+      ["delete", "log", "desc", "edit", "scale", "shell", "restart"].map do |v|
       "<a class='_#{v}' href='#{request.path}/#{c[0]}/#{c[1]}/#{v}'>#{v}</a>"
     end.join("\n") + "</td>"
   end
