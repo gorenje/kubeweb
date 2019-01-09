@@ -1,4 +1,4 @@
-const NotApp = function(){ alert('N/A') }
+const NotApp = function(){ alert('Action not Supported.') }
 
 function toggleLegend(chartid) {
   $('#'+chartid).find('g.highcharts-legend-item').click()

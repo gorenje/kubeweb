@@ -10,7 +10,7 @@ module Routes
               end
               redirect "/#{cmp}"
             else
-              @title = "Delete #{cmp}"
+              @select = ": Delete #{cmp}?"
               haml :choice
             end
           end
@@ -25,7 +25,7 @@ module Routes
             Kubectl.restart(params[:ns],params[:name]) if params[:r] == "yes"
             redirect "/pods"
           else
-            @title = "Restart Pod"
+            @select = ": Restart Pod?"
             haml :choice
           end
         end
@@ -40,7 +40,6 @@ module Routes
         end
 
         app.get '/deployments/:ns/:name/scale' do
-          @title = "Scale deployment"
           @scale = Kubectl.deployment(params[:ns],params[:name])[-1].
                      split(SpcRE)[1]
           haml :scale
@@ -119,7 +118,7 @@ module Routes
     def self.included(app)
       app.get '/_graph(/:cmp)?(/:ns)?(/:units)?' do
         if params[:cmp].nil?
-          @title = "Which Component"
+          @select = " Component"
           @choices = ["Pods", "Nodes"]
           haml :choice
         else
@@ -127,18 +126,17 @@ module Routes
 
           if @cmp == "pods"
             if params[:ns].nil?
-              @title = "Which Namespace"
+              @select = " Namespace"
               @choices = Kubectl.namespaces
               haml :choice
             else
               if params[:units].nil?
-                @title = "Which Values"
+                @select = ": Which Values?"
                 @choices = ["Percent", "Absolute"]
                 haml :choice
               else
                 @ns     = params[:ns]
                 @units  = params[:units]
-                @title  = 'Resources Graphs'
                 @limits = if @units == "percent"
                             CGI.escape(Base64.encode64(Kubectl.limits("pods",@ns).to_json))
                           end
@@ -147,13 +145,12 @@ module Routes
             end
           elsif @cmp == "nodes"
             if params[:ns].nil?
-              @title = "Which Values"
+              @select = ": Which Values?"
               @choices = ["Percent", "Absolute"]
               haml :choice
             else
               @ns    = nil
               @units = params[:ns]
-              @title = 'Resources Graphs'
               haml :graph
             end
           else
@@ -216,13 +213,11 @@ module Routes
   module ClusterActions
     def self.included(app)
       app.get '/_events' do
-        @title = "Cluster Events"
         @allrows = Kubectl.get("events")
         haml :table
       end
 
       app.get '/_cfg' do
-        @title = "Configuration"
         haml :config
       end
 
@@ -234,7 +229,7 @@ module Routes
       app.get '/_busybox(/:r)?' do
         (Kubectl.busybox && halt(200)) if request.xhr?
         (Kubectl.busybox(params[:r]) && redirect("/pods")) if params[:r]
-        @title = "Which Namespace"
+        @select = " Namespace"
         @choices = Kubectl.namespaces
         haml :choice
       end

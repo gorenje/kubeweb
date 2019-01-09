@@ -23,21 +23,19 @@ class Webapp < Sinatra::Base
   include Routes::Graph
 
   get '/top/:cmp' do
-    @title = "All " + params[:cmp]
     @allrows = Kubectl.top(params[:cmp])
     haml :table
   end
 
   Cmpnts.each do |element|
     get '/'+element do
-      @title = "All " + element.capitalize
       @allrows = Kubectl.get(element)
       haml :table
     end
   end
 
   get '/top' do
-    @title = "Which Top"
+    @select = " Component"
     @choices = ["Pods", "Nodes"]
     haml :choice
   end

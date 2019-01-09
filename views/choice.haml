@@ -1,5 +1,4 @@
 .text-center
-  %h1 Pick and Choose
-  %h2= request.path
+  %h1= "Select#{@select}"
   - (@choices || YesNo).each do |c|
     %a.btn.btn-primary{ :href => "#{request.path}/#{c.downcase}" }= c

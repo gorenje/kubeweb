@@ -50,8 +50,8 @@ module Kubectl
            src = item["source"]
            [ obj["namespace"],
              obj["name"],
-             _minsago(item["lastTimestamp"]),
-             _minsago(item["firstTimestamp"]),
+             _unitsago(item["lastTimestamp"]),
+             _unitsago(item["firstTimestamp"]),
              item["count"],
              obj["kind"],
              obj["fieldPath"],
@@ -112,6 +112,62 @@ module Kubectl
                      age
                     ].map{ |v| v || "&nbsp;" }.join(" ")
                   end)
+
+    when 'pods'
+      hsh = JSON(kctl("get #{cmp.to_s} --all-namespaces --output=json").join)
+        header = "NAMESPACE NAME READY STATUS RESTARTS AGE IP NODE"
+        [header] + (hsh["items"].map do |item|
+                      md,sp,st,age = _splat(item)
+
+                      ready,not_ready =
+                            st["containerStatuses"].partition do |cs|
+                        cs["ready"]
+                      end
+                      rsc = st["containerStatuses"].map do |cs|
+                        cs["restartCount"]
+                      end.sum
+
+                      [md["namespace"], md["name"],
+                       "#{ready.size}/#{ready.size + not_ready.size}",
+                       st["phase"],
+                       rsc,
+                       age,
+                       st["podIP"],
+                       sp["nodeName"],
+                      ].map{ |v| v || "&nbsp;" }.join(" ")
+                    end)
+
+    when "daemonsets"
+      hsh = JSON(kctl("get #{cmp.to_s} --all-namespaces --output=json").join)
+      header = "NAMESPACE NAME DESIRED CURRENT READY UP-TO-DATE "+
+               "AVAILABLE NODE&nbsp;SELECTOR AGE CONTAINERS IMAGES"
+        [header] + (hsh["items"].map do |item|
+                      md,sp,st,age = _splat(item)
+
+                      ndselector =
+                        (sp["template"]["spec"]["nodeSelector"]||{}).
+                          map do |k,v|
+                        "#{k}=#{v}"
+                      end.join
+                      tmp = sp["template"]["spec"]["containers"].map do |c|
+                        [c["name"], c["image"]]
+                      end
+                      images     = tmp.map(&:last).join(",")
+                      containers = tmp.map(&:first).join(",")
+
+                      [md["namespace"], md["name"],
+                       st["desiredNumberScheduled"],
+                       st["currentNumberScheduled"],
+                       st["numberReady"],
+                       st["updatedNumberScheduled"] || "0",
+                       st["numberAvailable"] || "0",
+                       ndselector.empty? ? nil : ndselector,
+                       age,
+                       containers,
+                       images,
+                      ].map{ |v| v || "&nbsp;" }.join(" ")
+                    end)
+
     else
       kctl("get #{cmp.to_s} --all-namespaces --output=wide")
     end
@@ -198,12 +254,16 @@ module Kubectl
   end
 
   def _splat(item)
-    md,sp,st = ["metadata","spec","status"].map {|a| item[a]}
-    age_days = (DateTime.now - DateTime.parse(md["creationTimestamp"])).to_i
-    [md,sp,st, "%d&nbsp;days" % age_days]
+    md,sp,st = ["metadata","spec","status"].map { |a| item[a] }
+    [md,sp,st, _unitsago(md["creationTimestamp"])]
   end
 
-  def _minsago(str)
-    "%dm" % ((DateTime.now - DateTime.parse(str)).to_f * 24 * 60).to_i
+  def _unitsago(str)
+    case age_seconds = (Time.now - Time.parse(str)).to_i
+    when 0..59       then "#{age_seconds}s"
+    when 60..3599    then "#{age_seconds / 60}m"
+    when 3600..86399 then "#{age_seconds / 3600}h"
+    else "#{age_seconds / 86400}d"
+    end
   end
 end
