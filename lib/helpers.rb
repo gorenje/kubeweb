@@ -27,7 +27,7 @@ module ViewHelpers
   def line_to_row(line,idx)
     (c = line.split(SpcRE)).map { |v| cell(v) }.join("\n") + "<td>" +
       ActionWithIcons.keys.map do |v|
-      "<a class='_#{v} fas fa-#{ActionWithIcons[v]}' title='#{v}' "+
+      "<a class='action _#{v} fas fa-#{ActionWithIcons[v]}' title='#{v}' "+
         "href='#{request.path}/#{c[0]}/#{c[1]}/#{v}'></a>"
     end.join("&nbsp;") + "</td>"
   end

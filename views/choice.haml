@@ -1,4 +1,24 @@
 .text-center
   %h1= "Select#{@select}"
+  %h2#details
   - (@choices || YesNo).each do |c|
     %a.btn.btn-primary{ :href => "#{request.path}/#{c.downcase}" }= c
+
+:javascript
+  $(document).ready(function() {
+     var elems = window.location.pathname.split("/").slice(1)
+     switch ( elems[0] ) {
+       case "_busybox":
+       case "_graph":
+       case "top":
+       break;
+
+       case "pods":
+       case "pvc":
+         $('#details').html(elems[3]+ "<br>" + elems[1] + "<br>" + elems[2] )
+       break;
+
+       default:
+         $('#details').html( window.location.pathname )
+     }
+  })

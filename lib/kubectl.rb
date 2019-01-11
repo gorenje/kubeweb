@@ -20,7 +20,12 @@ module Kubectl
   end
 
   def delete(cmp, ns, name)
-    kctl("delete #{cmp.to_s} -n #{ns} --force #{name}")
+    case cmp
+    when "namespaces"
+      kctl("delete #{cmp.to_s} --force #{ns}")
+    else
+      kctl("delete #{cmp.to_s} -n #{ns} --force #{name}")
+    end
   end
 
   def top(cmp, ns = nil)
@@ -120,12 +125,21 @@ module Kubectl
                       md,sp,st,age = _splat(item)
 
                       ready,not_ready =
-                            st["containerStatuses"].partition do |cs|
-                        cs["ready"]
-                      end
-                      rsc = st["containerStatuses"].map do |cs|
-                        cs["restartCount"]
-                      end.sum
+                            begin
+                              st["containerStatuses"].partition do |cs|
+                                cs["ready"]
+                              end
+                            rescue NoMethodError
+                              [[],[]]
+                            end
+                      rsc =
+                        begin
+                          st["containerStatuses"].map do |cs|
+                            cs["restartCount"]
+                          end.sum
+                        rescue NoMethodError
+                          0
+                        end
 
                       [md["namespace"], md["name"],
                        "#{ready.size}/#{ready.size + not_ready.size}",
